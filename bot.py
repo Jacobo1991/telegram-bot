@@ -719,12 +719,12 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     raw_text = (message.text or message.caption or "").strip()
-chat_type = message.chat.type  # "private", "group", "supergroup", "channel"
+    chat_type = message.chat.type  # "private", "group", "supergroup", "channel"
 
-# --- FIX: remove bot mention in groups ---
-if chat_type in ("group", "supergroup"):
-    bot_username = context.bot.username
-    raw_text = raw_text.replace(f"@{bot_username}", "").strip()
+    # --- FIX: remove bot mention in groups ---
+    if chat_type in ("group", "supergroup"):
+        bot_username = context.bot.username
+        raw_text = raw_text.replace(f"@{bot_username}", "").strip()
 
     # --- Reset confirmation flow: always takes priority ---
     if context.user_data.get("awaiting_reset"):
@@ -753,20 +753,17 @@ if chat_type in ("group", "supergroup"):
 
     # --- Determine search query based on chat type ---
     if chat_type == "private":
-        # Private chat: search everything automatically
         query = raw_text
     else:
-        # Group/supergroup: only respond when bot is explicitly mentioned
         bot_username = context.bot.username
         query = _extract_mention_query(message, bot_username)
         if query is None:
-            return  # Not mentioned — stay silent
+            return
 
     if not query or len(query) < 3:
         return
 
     await _run_smart_search(update, query)
-
 
 async def handle_csv_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
