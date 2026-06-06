@@ -633,14 +633,31 @@ async def _run_smart_search(update: Update, query: str) -> None:
     """Execute the shared counter/where search logic for a given query string."""
     close_btn = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Close", callback_data="close")]])
 
-    # 1. Exact team match → /counter logic
+    # 1. Exact team match → show counters + what it counters
     canonical = db.get_team_canonical_name(query)
     if canonical:
         row = db.get_team_row(canonical)
+
         counters = db.get_counters_for_team(canonical)
-        reply = format_counters_text(canonical, counters, row["category"] if row else None)
-        await update.message.reply_text(reply, parse_mode=ParseMode.HTML, reply_markup=close_btn)
+        counter_text = format_counters_text(
+            canonical,
+            counters,
+            row["category"] if row else None
+        )
+
+        targets = db.get_teams_countered_by(canonical)
+        where_text = _format_where_text(canonical, targets)
+
+        reply = f"{counter_text}\n\n{'─' * 20}\n\n{where_text}"
+
+        await update.message.reply_text(
+            reply,
+            parse_mode=ParseMode.HTML,
+            reply_markup=close_btn
+        )
         return
+
+    
 
     # 2. Partial match among teams that have counters → /counter logic
     counter_matches = db.search_teams(query)
