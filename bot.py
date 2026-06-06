@@ -702,23 +702,15 @@ async def _run_smart_search(update: Update, query: str) -> None:
 
 
 def _extract_mention_query(message, bot_username: str) -> str | None:
-    """
-    For group messages: return the text after the @BotUsername mention,
-    or None if the bot is not mentioned.
-    """
     raw = message.text or ""
-    entities = message.entities or []
-    target = f"@{bot_username}".lower()
+    bot_tag = f"@{bot_username}".lower()
 
-    for entity in entities:
-        if entity.type == "mention":
-            mention_text = raw[entity.offset: entity.offset + entity.length]
-            if mention_text.lower() == target:
-                # Remove just this mention occurrence and strip surrounding whitespace
-                query = (raw[: entity.offset] + raw[entity.offset + entity.length:]).strip()
-                return query
+    if bot_tag not in raw.lower():
+        return None
 
-    return None  # Bot not mentioned
+    query = raw.replace(bot_tag, "").strip()
+
+    return query if query else None
 
 
 async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
