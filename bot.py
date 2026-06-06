@@ -703,14 +703,27 @@ async def _run_smart_search(update: Update, query: str) -> None:
 
 def _extract_mention_query(message, bot_username: str) -> str | None:
     raw = message.text or ""
-    bot_tag = f"@{bot_username}".lower()
-
-    if bot_tag not in raw.lower():
+    if not raw:
         return None
 
-    query = raw.replace(bot_tag, "").strip()
+    bot_username = bot_username.lower()
+    entities = message.entities or []
 
-    return query if query else None
+    # 1. Detect real Telegram mention entity (@bot)
+    for entity in entities:
+        if entity.type == "mention":
+            mention = raw[entity.offset:entity.offset + entity.length]
+            if mention.lower() == f"@{bot_username}":
+                query = (raw[:entity.offset] + raw[entity.offset + entity.length:]).strip()
+                return query if query else None
+
+    # 2. fallback simple text match
+    tag = f"@{bot_username}"
+    if tag.lower() in raw.lower():
+        query = raw.replace(tag, "").strip()
+        return query if query else None
+
+    return None
 
 
 async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
