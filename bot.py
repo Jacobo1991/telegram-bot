@@ -718,8 +718,13 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
     if not message:
         return
 
-    raw_text = (message.text or "").strip()
-    chat_type = message.chat.type  # "private", "group", "supergroup", "channel"
+    raw_text = (message.text or message.caption or "").strip()
+chat_type = message.chat.type  # "private", "group", "supergroup", "channel"
+
+# --- FIX: remove bot mention in groups ---
+if chat_type in ("group", "supergroup"):
+    bot_username = context.bot.username
+    raw_text = raw_text.replace(f"@{bot_username}", "").strip()
 
     # --- Reset confirmation flow: always takes priority ---
     if context.user_data.get("awaiting_reset"):
